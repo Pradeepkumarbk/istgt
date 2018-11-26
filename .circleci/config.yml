@@ -1,6 +1,11 @@
 version: 2
 jobs:
-  build_tag_0:
+  build:
+    filters:
+      tags:
+        only: /.*/
+# jobs:
+#   build_tag_0:
     machine: 
       docker_layer_caching: true
     working_directory: ~/github.com/Pradeepkumarbk/istgt
@@ -30,8 +35,12 @@ jobs:
             sudo -E bash ./test_istgt.sh || true;
             pwd
             sudo -E bash ./build_image.sh
-  version: 2
-  TAGS:
-    jobs:
-      - build_tag_0
+# workflows:
+#   version: 2
+#   TAGS:
+#     jobs:
+#       - build_tag_0
+#           filters:
+#             tags:
+#               only: /.*/
 
