@@ -1,0 +1,51 @@
+version: 2
+jobs:
+  build_tag_0:
+    machine: 
+      docker_layer_caching: true
+    working_directory: ~/github.com/Pradeepkumarbk/istgt
+    steps:
+      - checkout
+      - run:
+          command: |    
+            sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+            sudo apt-get update -qq
+            sudo apt-get install --yes -qq gcc-6 g++-6 gdb
+            sudo apt-get install libssl-dev open-iscsi libjson-c-dev
+            # use gcc-6 by default
+            sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
+            sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
+            ./autogen.sh
+            # we are running build two times. One is without replication code and
+            # another one is with replication code. The reason behind running build
+            # without replication code is to make sure that replication feature
+            # related code doesn't break the existing target code.
+            ./configure
+            make
+            make clean
+            ./configure --enable-debug --enable-replication
+            make
+            # run ztest and test supported zio backends
+            sudo -E bash ./print_debug_info.sh &
+            sudo -E bash ./test_istgt.sh || true;
+            pwd
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            sudo -E bash ./build_image.sh
+  build_tag_1:
+      machine: 
+        docker_layer_caching: true
+      working_directory: ~/github.com/Pradeepkumarbk/istgt
+      steps:
+        - checkout
+        - run: 
+            command: |
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              sudo -E bash ./build_image.sh
+workflows:
+  version: 2
+  TAGS:
+    jobs:
+      - build_tag_0
+      - build_tag_1:
+          requires:
+            - build_tag_0

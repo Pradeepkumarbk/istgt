@@ -9,7 +9,7 @@ make clean
 make
 
 BUILD_DATE=$(date +'%Y%m%d%H%M%S')
-REPO_NAME="openebs/cstor-istgt"
+REPO_NAME="pradeepkumar95/cstor-istgt"
 
 echo "Build image ${REPO_NAME}:ci with BUILD_DATE=${BUILD_DATE}"
 
@@ -23,7 +23,7 @@ sudo docker build --help
 
 cd docker && \
  sudo docker build -f Dockerfile -t ${REPO_NAME}:ci --build-arg BUILD_DATE=${BUILD_DATE} . && \
- IMAGE_REPO=${REPO_NAME} ./push && \
+ CIRCLE_PROJECT_REPONAME=${REPO_NAME} ./push && \
  cd ..
 
 rm -rf ./docker/istgt*
