@@ -29,7 +29,7 @@ jobs:
           sudo -E bash ./print_debug_info.sh &
           sudo -E bash ./test_istgt.sh || true;
           pwd
-          sudo -E bash ./build_image.sh
+          sudo -E bash ./build_image1.sh
 workflows:
   version: 2
   TAGS:
