@@ -3,7 +3,7 @@ jobs:
   build:
     filters:
       tags:
-        only: /.*/
+        only: /^v.*/
 # jobs:
 #   build_tag_0:
     machine: 
