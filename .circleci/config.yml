@@ -3,6 +3,8 @@ jobs:
   build_tag_0:
     machine: 
       docker_layer_caching: true
+    environment:
+      CIRCLE_BRANCH: master
     working_directory: ~/github.com/Pradeepkumarbk/istgt
     steps:
       - checkout
