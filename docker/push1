@@ -21,7 +21,7 @@ BUILD_ID=$(git describe --tags --always)
 # Determine the current branch
 CURRENT_BRANCH=""
 echo qqqqqqqqqqqqqqqfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ${CURRENT_BRANCH}
-if ${CIRCLE_BRANCH} == ""
+if [ ${CIRCLE_BRANCH} = "" ]; then
 then
   CURRENT_BRANCH=${CIRCLE_TAG}
   echo wwwwwwwwwwwwwwwwwwwwwwwwwfffffwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
