@@ -18,26 +18,6 @@ fi
 # Generate a uniqe tag based on the commit and tag
 BUILD_ID=$(git describe --tags --always)
 
-# Determine the current branch
-CURRENT_BRANCH=""
-if [ -z ${TRAVIS_BRANCH} ];
-then
-  CURRENT_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
-else
-  CURRENT_BRANCH=${TRAVIS_BRANCH}
-fi
-
-#Depending on the branch where builds are generated, 
-# set the tag CI (fixed) and build tags.
-BUILD_TAG="${CURRENT_BRANCH}-${BUILD_ID}"
-CI_TAG="${CURRENT_BRANCH}-ci"
-if [ ${CURRENT_BRANCH} = "replication" ]; then
-  CI_TAG="ci"
-fi
-
-echo "Set the fixed ci image tag as: ${CI_TAG}"
-echo "Set the build/unique image tag as: ${BUILD_TAG}"
-
 function TagAndPushImage() {
   REPO="$1"
   TAG="$2"
@@ -48,28 +28,46 @@ function TagAndPushImage() {
   sudo docker push ${IMAGE_URI};
 }
 
-if [ ! -z "${DNAME}" ] && [ ! -z "${DPASS}" ];
+# Determine the current branch
+CURRENT_BRANCH=""
+if [ -z ${TRAVIS_BRANCH} ];
 then
-  sudo docker login -u "${DNAME}" -p "${DPASS}";
+  CURRENT_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
+  #Depending on the branch where builds are generated, 
+  # set the tag CI (fixed) and build tags.
+  BUILD_TAG="${CURRENT_BRANCH}-${BUILD_ID}"
+  CI_TAG="${CURRENT_BRANCH}-ci"
+  if [ ${CURRENT_BRANCH} = "master" ]; then
+    CI_TAG="ci"
+  fi
 
-  # Push CI tagged image - :ci or :branch-ci
-  TagAndPushImage "${IMAGE_REPO}" "${CI_TAG}"
-
-  # Push unique tagged image - :master-<uuid> or :branch-<uuid>
-  # This unique/build image will be pushed to corresponding ci repo. 
-  TagAndPushImage "${IMAGE_REPO}-ci" "${BUILD_TAG}"
-
-
-  if [ ! -z "${TRAVIS_TAG}" ] ;
+  echo "Set the fixed ci image tag as: ${CI_TAG}"
+  echo "Set the build/unique image tag as: ${BUILD_TAG}"
+  if [ ! -z "${DOCKER_USER}" ] && [ ! -z "${DOCKER_PASS}" ];
   then
+    sudo docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}";
+
+    # Push CI tagged image - :ci or :branch-ci
+    TagAndPushImage "${IMAGE_REPO}" "${CI_TAG}"
+
+    # Push unique tagged image - :master-<uuid> or :branch-<uuid>
+    # This unique/build image will be pushed to corresponding ci repo. 
+    TagAndPushImage "${IMAGE_REPO}-ci" "${BUILD_TAG}"
+  else
+    echo "No docker credentials provided. Skip uploading ${IMAGE_REPO} to docker hub";
+  fi;
+else
+  if [ ! -z "${DOCKER_USER}" ] && [ ! -z "${DOCKER_PASS}" ];
+  then
+    sudo docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}";
     # Push with different tags if tagged as a release
     # When github is tagged with a release, then Travis will
     # set the release tag in env TRAVIS_TAG
     TagAndPushImage "${IMAGE_REPO}" "${TRAVIS_TAG}"
     TagAndPushImage "${IMAGE_REPO}" "latest"
+  else
+    echo "No docker credentials provided. Skip uploading ${CIRCLE_PROJECT_REPONAME} to docker hub";
   fi;
-else
-  echo "No docker credentials provided. Skip uploading ${IMAGE_REPO} to docker hub";
 fi;
 
 # Push ci image to quay.io for security scanning
@@ -91,4 +89,3 @@ then
 else
   echo "No docker credentials provided. Skip uploading ${IMAGE_REPO} to quay";
 fi;
-

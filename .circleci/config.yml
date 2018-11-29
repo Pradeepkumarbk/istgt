@@ -1,35 +1,184 @@
+# version: 2
+# jobs:
+#   build_tag_0:
+#     machine:
+#       docker_layer_caching: true
+#     working_directory: ~/github.com/Pradeepkumarbk/istgt
+#     steps:
+#     - checkout
+#     - run:
+#         command: |
+#           docker pull openebs/cstor-ubuntu:xenial-20181005
+#           cat /etc/os-release
+#           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+#           sudo apt-get update -qq
+#           sudo apt-get install --yes -qq gcc-6 g++-6 gdb
+#           sudo apt-get install libssl-dev open-iscsi libjson-c-dev
+#           # use gcc-6 by default
+#           sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
+#           sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
+#           ./autogen.sh
+#           # we are running build two times. One is without replication code and
+#           # another one is with replication code. The reason behind running build
+#           # without replication code is to make sure that replication feature
+#           # related code doesn't break the existing target code.
+#           ./configure
+#           make
+#           make clean
+#           ./configure --enable-debug --enable-replication
+#           make
+#           # run ztest and test supported zio backends
+#           sudo -E bash ./print_debug_info.sh &
+#           sudo -E bash ./test_istgt.sh || true;
+#           pwd
+#           sudo -E bash ./build_image1.sh
+# workflows:
+#   version: 2
+#   TAGS:
+#     jobs:
+#     - build_tag_0:
+#         filters:
+#           tags:
+#             only: /.*/
+
+
 version: 2
 jobs:
   build_tag_0:
     machine:
-      docker_layer_caching: true
-    working_directory: ~/github.com/Pradeepkumarbk/istgt
+      image: openebs/cstor-ubuntu:xenial-20181005
+    working_directory: ~/github.com/openebs/istgt
     steps:
     - checkout
+    # - setup_remote_docker
+    - run: apt-get update
+    - run: apt-get install sudo -y
+    - run: sudo apt-get update
     - run:
-        command: |
-          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          sudo apt-get update -qq
-          sudo apt-get install --yes -qq gcc-6 g++-6 gdb
-          sudo apt-get install libssl-dev open-iscsi libjson-c-dev
+          name: Installing curl
+          command: apt install -y curl
+    # - run: sudo apt-get remove docker docker-engine docker.io -y 
+    # - run: sudo apt-get install apt-transport-https ca-certificates curl software-properties-common -y
+    # # - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    # # - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    # - run: sudo apt-get update
+    # - run: sudo apt-get install apt-transport-https ca-certificates curl software-properties-common -y
+    # - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    # - run: sudo apt-key fingerprint 0EBFCD88 
+    # - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    # - run: sudo apt-get update -y
+    # - run: sudo apt-get install docker-ce -y
+    # - run: apt-cache madison docker-ce
+    # - run: docker -v
+    # - run: sudo apt-get install systemd -y
+    # - run: sudo mkdir -p /run/dbus
+    # - run: sudo dbus-daemon --system 
+    # - run: sudo service docker status
+    - run:
+          name: Install Docker client
+          command: |
+            set -x
+            VER="17.03.0-ce"
+            curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
+            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+            mv -f /tmp/docker/* /usr/bin
+    - run: docker -v
+    - run: pwd
+    # - run: echo "Initializing build with docker stack"
+    # - run: docker swarm init
+    # # - run: docker stack deploy -c stackfile.yml bitroid
+    # - run: sleep 90
+    # - run: docker service ps
+    # - run: docker service ls
+    # - run: docker ps -a
+  
+
+    # - run: cat /etc/os-release
+    # - run: sudo docker run --privileged -d docker:dind
+
+    #   # - run: lsb_release -a
+    # - run: sudo systemctl daemon-reload 
+    # - run: sudo systemctl docker.service
+    # - run: systemctl system status
+    # - setup_remote_docker
+    - run: sudo docker build -t myapp .
+
+    # - run: apt-get update
+    # - run: apt-get install sudo -y
+    - run: sudo apt-get install software-properties-common -y
+    - run: sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+    - run: sudo apt-get update -qq -y
+    - run: sudo apt-get install gcc-snapshot -y
+    - run: sudo apt-get update -qq -y
+    - run: sudo apt-get install gcc-6 g++-6 -y
+    - run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6 
+    - run: sudo apt-get install gcc-4.8 g++-4.8 -y 
+    - run: sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
+    # - run: sudo apt-get install --yes -qq gcc-6 g++-6 gdb -y 
+    - run: sudo apt-get install libssl-dev open-iscsi libjson-c-dev -y
           # use gcc-6 by default
-          sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
-          sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
-          ./autogen.sh
+    - run: sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
+    - run: sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
+    - run: sudo apt-get install dh-autoreconf -y
+    - run: sudo apt-get install wget -y
+    - run: ./autogen.sh
           # we are running build two times. One is without replication code and
           # another one is with replication code. The reason behind running build
           # without replication code is to make sure that replication feature
           # related code doesn't break the existing target code.
-          ./configure
-          make
-          make clean
-          ./configure --enable-debug --enable-replication
-          make
+    - run: ./configure
+    - run: make
+    - run: make clean
+    - run: ./configure --enable-debug --enable-replication
+    - run: make
           # run ztest and test supported zio backends
-          sudo -E bash ./print_debug_info.sh &
-          sudo -E bash ./test_istgt.sh || true;
-          pwd
-          sudo -E bash ./build_image1.sh
+    - run: sudo -E bash ./print_debug_info.sh &
+    # - run: sudo apt-get install curl -y
+    # - run: sudo apt-get install -y
+    # - run: sudo apt-get upgrade -y
+    - run: sudo apt-get install -y open-iscsi
+    # - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - 
+    # - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" 
+    # - ru: sudo apt-get install apt-transport-https -y 
+    # - run: sudo apt-get update 
+    # - run: apt-cache policy docker-ce -y
+    # - run: sudo apt-get install -y docker-ce
+    # - run: sudo apt-get update
+    # - run: sudo apt-get remove docker docker-engine docker.io -y 
+    # - run: sudo apt-get install apt-transport-https ca-certificates curl software-properties-common -y
+    # # - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    # # - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    # - run: sudo apt-get update
+    # - run: sudo apt-get install apt-transport-https ca-certificates curl software-properties-common -y
+    # - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    # - run: sudo apt-key fingerprint 0EBFCD88 
+    # - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    # - run: sudo apt-get update -y
+    # - run: sudo apt-get install docker-ce -y
+    # - run: apt-cache madison docker-ce
+    # - run: docker -v
+    # - run: sudo apt-get install docker-ce=18.03.0~ce-0~ubuntu -y
+    # - run: sudo docker run hello-world
+
+    # - run: sudo apt-get install docker-ce -y
+    # # - run: systemctl status docker
+    # - run: docker run -t -i ubuntu:16.04 /bin/bash
+    - run: sudo docker run -it --privileged --net=host name:tag
+    # - run: apt-get install iscsitarget -y
+    # - run: sed -i -e 's/ISCSITARGET_ENABLE=false/ISCSITARGET_ENABLE=true/' /etc/default/iscsitarget 
+    # - run: sudo systemctl disable iscsitarget 
+    # - run: sudo service iscsitarget stop 
+    # - run: sudo modprobe iscsi_trgt 
+    - run: apt-get update
+    - run: sudo apt-get install git-core -y
+    - run: sudo -E bash ./test_istgt.sh || true;
+    - run: pwd
+    # - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add - 
+    # - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" 
+    # - run: sudo apt-get update -y
+    # # - run: apt-cache policy docker-ce -y
+    # - run: sudo apt-get install -y docker-ce
+    - run: sudo -E bash ./build_image1.sh
 workflows:
   version: 2
   TAGS:
