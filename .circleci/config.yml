@@ -36,5 +36,9 @@ workflows:
     jobs:
     - build_tag_0:
         filters:
+          branches:
+            only:
+              - master
+        filters:
           tags:
             only: /.*/
